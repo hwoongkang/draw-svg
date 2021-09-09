@@ -332,6 +332,7 @@ namespace CS248
     {
       for (int sy = minY; sy <= maxY; sy++)
       {
+
         // screen check
         if (sx < 0 || sx >= target_w)
         {
@@ -407,13 +408,17 @@ namespace CS248
     {
       for (int sy = 0; sy < target_h; sy++)
       {
-        uint8_t red, green, blue, alpha;
+
         int screen_index = sx + sy * target_w;
+
         for (int rgba = 0; rgba < 4; rgba++)
         {
           int render_index = 4 * screen_index + rgba;
           int supersample_index = squared * render_index;
-          render_target[render_index] = utils::average(supersample_target, supersample_index, supersample_index + squared);
+          uint8_t color_value = utils::average(supersample_target, supersample_index, supersample_index + squared);
+          if (color_value == 255)
+            continue;
+          render_target[render_index] = color_value;
         }
       }
     }
