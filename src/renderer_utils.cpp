@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <cmath>
+#include <vector>
 
 using namespace CS248;
 
@@ -24,6 +25,18 @@ namespace utils
         auto edge = end - start;
         auto point = Vector2D(x, y) - start;
         return cross(point, edge) <= 0;
+    }
+
+    uint8_t average(const std::vector<unsigned char> &vec, int begin, int end)
+    {
+        int sum = 0;
+        int LEN = end - begin;
+
+        for (auto it = vec.begin() + begin; it != vec.begin() + end; it++)
+        {
+            sum += (int)(*it);
+        }
+        return (uint8_t)(sum / LEN);
     }
 
     bool Triangle::isCounterClockwise()

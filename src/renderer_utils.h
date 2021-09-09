@@ -2,6 +2,7 @@
 #define CS248_RENDERER_UTILS
 
 #include "vector2D.h"
+#include <vector>
 
 using namespace CS248;
 
@@ -11,6 +12,8 @@ namespace utils
     int lowerBound(float a, float b, float c);
 
     bool isOnLeft(const Vector2D &start, const Vector2D &end, int x, int y);
+
+    uint8_t average(const std::vector<unsigned char> &vec, int begin, int end);
 
     class Triangle
     {

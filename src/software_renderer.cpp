@@ -88,6 +88,7 @@ namespace CS248
     // Task 2:
     // You may want to modify this for supersampling support
     this->sample_rate = sample_rate;
+    supersample_target.resize(4 * target_w * target_h * sample_rate * sample_rate);
   }
 
   void SoftwareRendererImp::set_render_target(unsigned char *render_target,
@@ -99,6 +100,7 @@ namespace CS248
     this->render_target = render_target;
     this->target_w = width;
     this->target_h = height;
+    supersample_target.resize(4 * width * height * sample_rate * sample_rate);
   }
 
   void SoftwareRendererImp::draw_element(SVGElement *element)
@@ -323,6 +325,9 @@ namespace CS248
     int minY = triangle.getMinY();
     int maxY = triangle.getMaxY();
 
+    int squared = sample_rate * sample_rate;
+    float d = 1.0 / sample_rate;
+
     for (int sx = minX; sx <= maxX; sx++)
     {
       for (int sy = minY; sy <= maxY; sy++)
@@ -336,15 +341,41 @@ namespace CS248
         {
           continue;
         }
-        float x = (float)sx + 0.5;
-        float y = (float)sy + 0.5;
-        if (triangle.isInside(x, y))
+        // sample rate 3
+        // x = 1
+        // y = 0
+        // 36~44: supersampled red
+        // this goes to 4 of render target
+        for (int super_x = 0; super_x < sample_rate; super_x++)
         {
+          for (int super_y = 0; super_y < sample_rate; super_y++)
+          {
+            float x = (float)sx + d * super_x + d / 2;
+            float y = (float)sy + d * super_y + d / 2;
+            if (!triangle.isInside(x, y))
+            {
+              continue;
+            }
 
-          render_target[4 * (sx + sy * target_w)] = (uint8_t)(color.r * 255);
-          render_target[4 * (sx + sy * target_w) + 1] = (uint8_t)(color.g * 255);
-          render_target[4 * (sx + sy * target_w) + 2] = (uint8_t)(color.b * 255);
-          render_target[4 * (sx + sy * target_w) + 3] = (uint8_t)(color.a * 255);
+            int screen_index = sx + sy * target_w;
+
+            int red_render = 4 * screen_index;
+            int green_render = 4 * screen_index + 1;
+            int blue_render = 4 * screen_index + 2;
+            int alpha_render = 4 * screen_index + 3;
+
+            int super_offset = super_x + super_y * sample_rate;
+
+            int red_super = squared * red_render + super_offset;
+            int green_super = squared * green_render + super_offset;
+            int blue_super = squared * blue_render + super_offset;
+            int alpha_super = squared * alpha_render + super_offset;
+
+            supersample_target[red_super] = (uint8_t)(color.r * 255);
+            supersample_target[green_super] = (uint8_t)(color.g * 255);
+            supersample_target[blue_super] = (uint8_t)(color.b * 255);
+            supersample_target[alpha_super] = (uint8_t)(color.a * 255);
+          }
         }
       }
     }
@@ -365,6 +396,30 @@ namespace CS248
     // Task 2:
     // Implement supersampling
     // You may also need to modify other functions marked with "Task 2".
+
+    // sample rate 3
+    // x = 1
+    // y = 0
+    // 36~44: supersampled red
+    // this goes to 4 of render target
+    int squared = sample_rate * sample_rate;
+    for (int sx = 0; sx < target_w; sx++)
+    {
+      for (int sy = 0; sy < target_h; sy++)
+      {
+        uint8_t red, green, blue, alpha;
+        int screen_index = sx + sy * target_w;
+        for (int rgba = 0; rgba < 4; rgba++)
+        {
+          int render_index = 4 * screen_index + rgba;
+          int supersample_index = squared * render_index;
+          render_target[render_index] = utils::average(supersample_target, supersample_index, supersample_index + squared);
+        }
+      }
+    }
+
+    // flush
+    std::fill(supersample_target.begin(), supersample_target.end(), 255);
     return;
   }
 
