@@ -69,12 +69,11 @@ namespace CS248
   void SoftwareRendererImp::draw_svg(SVG &svg)
   {
 
-    // set top level transformation
-    transformation = canvas_to_screen;
-
     // draw all elements
     for (size_t i = 0; i < svg.elements.size(); ++i)
     {
+      // set top level transformation
+      transformation = canvas_to_screen;
       draw_element(svg.elements[i]);
     }
 
@@ -127,7 +126,8 @@ namespace CS248
 
     // Task 3 (part 1):
     // Modify this to implement the transformation stack
-
+    Matrix3x3 temp(transformation);
+    transformation = transformation * element->transform;
     switch (element->type)
     {
     case POINT:
@@ -157,6 +157,7 @@ namespace CS248
     default:
       break;
     }
+    transformation = temp;
   }
 
   // Primitive Drawing //
