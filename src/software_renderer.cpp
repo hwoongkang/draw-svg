@@ -32,19 +32,38 @@ namespace CS248
     if (y < 0 || y >= target_h)
       return;
 
-    Color pixel_color;
+    int screen_index = x + y * target_w;
     float inv255 = 1.0 / 255.0;
-    pixel_color.r = render_target[4 * (x + y * target_w)] * inv255;
-    pixel_color.g = render_target[4 * (x + y * target_w) + 1] * inv255;
-    pixel_color.b = render_target[4 * (x + y * target_w) + 2] * inv255;
-    pixel_color.a = render_target[4 * (x + y * target_w) + 3] * inv255;
+    int squared = sample_rate * sample_rate;
+    for (int super_x = 0; super_x < sample_rate; super_x++)
+    {
+      for (int super_y = 0; super_y < sample_rate; super_y++)
+      {
+        Color super_color;
+        int red_render = 4 * screen_index;
+        int green_render = 4 * screen_index + 1;
+        int blue_render = 4 * screen_index + 2;
+        int alpha_render = 4 * screen_index + 3;
 
-    pixel_color = ref->alpha_blending_helper(pixel_color, color);
+        int super_offset = super_x + super_y * sample_rate;
 
-    render_target[4 * (x + y * target_w)] = (uint8_t)(pixel_color.r * 255);
-    render_target[4 * (x + y * target_w) + 1] = (uint8_t)(pixel_color.g * 255);
-    render_target[4 * (x + y * target_w) + 2] = (uint8_t)(pixel_color.b * 255);
-    render_target[4 * (x + y * target_w) + 3] = (uint8_t)(pixel_color.a * 255);
+        int red_super = squared * red_render + super_offset;
+        int green_super = squared * green_render + super_offset;
+        int blue_super = squared * blue_render + super_offset;
+        int alpha_super = squared * alpha_render + super_offset;
+
+        super_color.r = supersample_target[red_super] * inv255;
+        super_color.g = supersample_target[green_super] * inv255;
+        super_color.b = supersample_target[blue_super] * inv255;
+        super_color.a = supersample_target[alpha_super] * inv255;
+
+        super_color = ref->alpha_blending_helper(super_color, color);
+        supersample_target[red_super] = (uint8_t)(super_color.r * 255);
+        supersample_target[green_super] = (uint8_t)(super_color.g * 255);
+        supersample_target[blue_super] = (uint8_t)(super_color.b * 255);
+        supersample_target[alpha_super] = (uint8_t)(super_color.a * 255);
+      }
+    }
   }
 
   void SoftwareRendererImp::draw_svg(SVG &svg)
