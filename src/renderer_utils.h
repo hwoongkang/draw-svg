@@ -2,9 +2,17 @@
 #define CS248_RENDERER_UTILS
 
 #include "vector2D.h"
+#include "matrix3x3.h"
+#include "color.h"
 #include <vector>
 
 using namespace CS248;
+namespace Task4
+{
+    Color bilinear(Color *colors, float x, float y);
+    Color colorFromBuffer(const std::vector<unsigned char> &buffer, int index);
+    void bound(int &num, int min, int max);
+}
 
 namespace utils
 {

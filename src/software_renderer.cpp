@@ -7,6 +7,7 @@
 
 #include "triangulation.h"
 #include "renderer_utils.h"
+#include "texture.h"
 
 using namespace std;
 
@@ -408,6 +409,60 @@ namespace CS248
   {
     // Task 4:
     // Implement image rasterization (you may want to call fill_sample here)
+
+    int min_x = std::floor(x0);
+    int max_x = std::ceil(x1);
+    int min_y = std::floor(y0);
+    int max_y = std::ceil(y1);
+
+    int squared = sample_rate * sample_rate;
+    float d = 1.0 / sample_rate;
+    for (int sx = min_x; sx < max_x; sx++)
+    {
+      for (int sy = min_y; sy < max_y; sy++)
+      {
+        if (sx < 0 || sx >= target_w)
+        {
+          continue;
+        }
+        if (sy < 0 || sy >= target_h)
+        {
+          continue;
+        }
+        int screen_index = sx + sy * target_w;
+
+        int red_render = 4 * screen_index;
+        int green_render = 4 * screen_index + 1;
+        int blue_render = 4 * screen_index + 2;
+        int alpha_render = 4 * screen_index + 3;
+
+        for (int super_x = 0; super_x < sample_rate; super_x++)
+        {
+          for (int super_y = 0; super_y < sample_rate; super_y++)
+          {
+            float x = (float)sx + d * super_x + d / 2;
+            float y = (float)sy + d * super_y + d / 2;
+
+            float u = (x - x0) / (x1 - x0);
+            float v = (y - y0) / (y1 - y0);
+
+            Color color = sampler->sample_bilinear(tex, u, v);
+
+            int super_offset = super_x + super_y * sample_rate;
+
+            int red_super = squared * red_render + super_offset;
+            int green_super = squared * green_render + super_offset;
+            int blue_super = squared * blue_render + super_offset;
+            int alpha_super = squared * alpha_render + super_offset;
+
+            supersample_target[red_super] = (uint8_t)(color.r * 255);
+            supersample_target[green_super] = (uint8_t)(color.g * 255);
+            supersample_target[blue_super] = (uint8_t)(color.b * 255);
+            supersample_target[alpha_super] = (uint8_t)(color.a * 255);
+          }
+        }
+      }
+    }
   }
 
   // resolve samples to render target

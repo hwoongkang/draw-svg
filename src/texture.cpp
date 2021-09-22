@@ -1,114 +1,152 @@
 #include "texture.h"
 #include "color.h"
+#include <math.h>
 
 #include <assert.h>
 #include <iostream>
 #include <algorithm>
+#include "renderer_utils.h"
 
 using namespace std;
 
-namespace CS248 {
+namespace CS248
+{
 
-inline void uint8_to_float( float dst[4], unsigned char* src ) {
-  uint8_t* src_uint8 = (uint8_t *)src;
-  dst[0] = src_uint8[0] / 255.f;
-  dst[1] = src_uint8[1] / 255.f;
-  dst[2] = src_uint8[2] / 255.f;
-  dst[3] = src_uint8[3] / 255.f;
-}
-
-inline void float_to_uint8( unsigned char* dst, float src[4] ) {
-  uint8_t* dst_uint8 = (uint8_t *)dst;
-  dst_uint8[0] = (uint8_t) ( 255.f * max( 0.0f, min( 1.0f, src[0])));
-  dst_uint8[1] = (uint8_t) ( 255.f * max( 0.0f, min( 1.0f, src[1])));
-  dst_uint8[2] = (uint8_t) ( 255.f * max( 0.0f, min( 1.0f, src[2])));
-  dst_uint8[3] = (uint8_t) ( 255.f * max( 0.0f, min( 1.0f, src[3])));
-}
-
-void Sampler2DImp::generate_mips(Texture& tex, int startLevel) {
-
-  // NOTE: 
-  // This starter code allocates the mip levels and generates a level 
-  // map by filling each level with placeholder data in the form of a 
-  // color that differs from its neighbours'. You should instead fill
-  // with the correct data!
-
-  // Extra credit: Implement this
-
-  // check start level
-  if ( startLevel >= tex.mipmap.size() ) {
-    std::cerr << "Invalid start level"; 
+  inline void uint8_to_float(float dst[4], unsigned char *src)
+  {
+    uint8_t *src_uint8 = (uint8_t *)src;
+    dst[0] = src_uint8[0] / 255.f;
+    dst[1] = src_uint8[1] / 255.f;
+    dst[2] = src_uint8[2] / 255.f;
+    dst[3] = src_uint8[3] / 255.f;
   }
 
-  // allocate sublevels
-  int baseWidth  = tex.mipmap[startLevel].width;
-  int baseHeight = tex.mipmap[startLevel].height;
-  int numSubLevels = (int)(log2f( (float)max(baseWidth, baseHeight)));
-
-  numSubLevels = min(numSubLevels, kMaxMipLevels - startLevel - 1);
-  tex.mipmap.resize(startLevel + numSubLevels + 1);
-
-  int width  = baseWidth;
-  int height = baseHeight;
-  for (int i = 1; i <= numSubLevels; i++) {
-
-    MipLevel& level = tex.mipmap[startLevel + i];
-
-    // handle odd size texture by rounding down
-    width  = max( 1, width  / 2); assert(width  > 0);
-    height = max( 1, height / 2); assert(height > 0);
-
-    level.width = width;
-    level.height = height;
-    level.texels = vector<unsigned char>(4 * width * height);
-
+  inline void float_to_uint8(unsigned char *dst, float src[4])
+  {
+    uint8_t *dst_uint8 = (uint8_t *)dst;
+    dst_uint8[0] = (uint8_t)(255.f * max(0.0f, min(1.0f, src[0])));
+    dst_uint8[1] = (uint8_t)(255.f * max(0.0f, min(1.0f, src[1])));
+    dst_uint8[2] = (uint8_t)(255.f * max(0.0f, min(1.0f, src[2])));
+    dst_uint8[3] = (uint8_t)(255.f * max(0.0f, min(1.0f, src[3])));
   }
 
-  // fill all 0 sub levels with interchanging colors
-  Color colors[3] = { Color(1,0,0,1), Color(0,1,0,1), Color(0,0,1,1) };
-  for(size_t i = 1; i < tex.mipmap.size(); ++i) {
+  void Sampler2DImp::generate_mips(Texture &tex, int startLevel)
+  {
 
-    Color c = colors[i % 3];
-    MipLevel& mip = tex.mipmap[i];
+    // NOTE:
+    // This starter code allocates the mip levels and generates a level
+    // map by filling each level with placeholder data in the form of a
+    // color that differs from its neighbours'. You should instead fill
+    // with the correct data!
 
-    for(size_t i = 0; i < 4 * mip.width * mip.height; i += 4) {
-      float_to_uint8( &mip.texels[i], &c.r );
+    // Extra credit: Implement this
+
+    // check start level
+    if (startLevel >= tex.mipmap.size())
+    {
+      std::cerr << "Invalid start level";
+    }
+
+    // allocate sublevels
+    int baseWidth = tex.mipmap[startLevel].width;
+    int baseHeight = tex.mipmap[startLevel].height;
+    int numSubLevels = (int)(log2f((float)max(baseWidth, baseHeight)));
+
+    numSubLevels = min(numSubLevels, kMaxMipLevels - startLevel - 1);
+    tex.mipmap.resize(startLevel + numSubLevels + 1);
+
+    int width = baseWidth;
+    int height = baseHeight;
+    for (int i = 1; i <= numSubLevels; i++)
+    {
+
+      MipLevel &level = tex.mipmap[startLevel + i];
+
+      // handle odd size texture by rounding down
+      width = max(1, width / 2);
+      assert(width > 0);
+      height = max(1, height / 2);
+      assert(height > 0);
+
+      level.width = width;
+      level.height = height;
+      level.texels = vector<unsigned char>(4 * width * height);
+    }
+
+    // fill all 0 sub levels with interchanging colors
+    Color colors[3] = {Color(1, 0, 0, 1), Color(0, 1, 0, 1), Color(0, 0, 1, 1)};
+    for (size_t i = 1; i < tex.mipmap.size(); ++i)
+    {
+
+      Color c = colors[i % 3];
+      MipLevel &mip = tex.mipmap[i];
+
+      for (size_t i = 0; i < 4 * mip.width * mip.height; i += 4)
+      {
+        float_to_uint8(&mip.texels[i], &c.r);
+      }
     }
   }
 
-}
+  Color Sampler2DImp::sample_nearest(Texture &tex,
+                                     float u, float v,
+                                     int level)
+  {
 
-Color Sampler2DImp::sample_nearest(Texture& tex, 
-                                   float u, float v, 
-                                   int level) {
+    // Task 4: Implement nearest neighbour interpolation
 
-  // Task 4: Implement nearest neighbour interpolation
-  
-  // return magenta for invalid level
-  return Color(1,0,1,1);
+    auto mipmap = tex.mipmap[0];
+    int x = std::round(u * mipmap.width);
+    int y = std::round(v * mipmap.height);
+    Task4::bound(x, 0, mipmap.width - 1);
+    Task4::bound(y, 0, mipmap.height - 1);
+    int index = 4 * (x + mipmap.width * y);
+    return Task4::colorFromBuffer(mipmap.texels, index);
 
-}
+    // return tex.mipmap[0].texels[x + y*]
+    // return magenta for invalid level
+    // return Color(1, 0, 1, 1);
+  }
 
-Color Sampler2DImp::sample_bilinear(Texture& tex, 
-                                    float u, float v, 
-                                    int level) {
-  
-  // Task 4: Implement bilinear filtering
+  Color Sampler2DImp::sample_bilinear(Texture &tex,
+                                      float u, float v,
+                                      int level)
+  {
+    // Task 4: Implement bilinear filtering
+    auto mipmap = tex.mipmap[0];
+    // texels centered at 0.5, 0.5
+    float x = u * mipmap.width - 0.5;
+    float y = v * mipmap.height - 0.5;
+    int x0 = std::floor(x);
+    int x1 = std::ceil(x);
+    int y0 = std::floor(y);
+    int y1 = std::ceil(y);
+    Task4::bound(x0, 0, mipmap.width - 1);
+    Task4::bound(x1, 0, mipmap.width - 1);
+    Task4::bound(y0, 0, mipmap.height - 1);
+    Task4::bound(y1, 0, mipmap.height - 1);
+    Color colors[] = {
+        Task4::colorFromBuffer(mipmap.texels, 4 * (x0 + mipmap.width * y0)),
+        Task4::colorFromBuffer(mipmap.texels, 4 * (x1 + mipmap.width * y0)),
+        Task4::colorFromBuffer(mipmap.texels, 4 * (x0 + mipmap.width * y1)),
+        Task4::colorFromBuffer(mipmap.texels, 4 * (x1 + mipmap.width * y1)),
+    };
 
-  // return magenta for invalid level
-  return Color(1,0,1,1);
+    return Task4::bilinear(colors, x - x0, y - y0);
 
-}
+    // return magenta for invalid level
+    //     return Color(1, 0, 1, 1);
+  }
 
-Color Sampler2DImp::sample_trilinear(Texture& tex, 
-                                     float u, float v, 
-                                     float u_scale, float v_scale) {
+  Color Sampler2DImp::sample_trilinear(Texture &tex,
+                                       float u, float v,
+                                       float u_scale, float v_scale)
+  {
 
-  // Extra credit: Implement trilinear filtering
+    // Extra credit: Implement trilinear filtering
 
-  // return magenta for invalid level
-  return Color(1,0,1,1);
-
-}
+    // return magenta for invalid level
+    return Color(1, 0, 1, 1);
+  }
 
 } // namespace CS248

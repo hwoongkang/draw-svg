@@ -1,5 +1,8 @@
 #include "renderer_utils.h"
 #include "vector2D.h"
+#include "vector3D.h"
+#include "matrix3x3.h"
+#include "color.h"
 
 #include <iostream>
 #include <cmath>
@@ -83,4 +86,46 @@ namespace utils
 
         return ab && bc && ca;
     }
+}
+
+namespace Task4
+{
+    Color interpolation(Color c0, Color c1, float x)
+    {
+        Color delta = c1 + (c0 * -1);
+        return c0 + delta * x;
+    }
+    Color bilinear(Color *colors, float x, float y)
+    {
+        Color c00 = colors[0];
+        Color c10 = colors[1];
+        Color c01 = colors[2];
+        Color c11 = colors[3];
+        Color bottom = interpolation(c00, c10, x);
+        Color top = interpolation(c01, c11, x);
+        return interpolation(bottom, top, y);
+    }
+
+    Color colorFromBuffer(const std::vector<unsigned char> &buffer, int index)
+    {
+        Color color;
+        float inv255 = 1.0 / 255.0;
+        color.r = buffer[index] * inv255;
+        color.g = buffer[index + 1] * inv255;
+        color.b = buffer[index + 2] * inv255;
+        color.a = buffer[index + 3] * inv255;
+        return color;
+    }
+    void bound(int &num, int min, int max)
+    {
+        if (num < min)
+        {
+            num = min;
+        }
+        else if (num > max)
+        {
+            num = max;
+        }
+    }
+
 }
