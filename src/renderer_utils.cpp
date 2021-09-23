@@ -29,9 +29,9 @@ namespace utils
 
     uint8_t average(const std::vector<unsigned char> &vec, int begin, int end)
     {
-        double sum = 0;
+        float sum = 0;
         int LEN = end - begin;
-        double AVG = 1.0 / LEN;
+
         for (auto it = vec.begin() + begin; it != vec.begin() + end; it++)
         {
             sum += (*it);
