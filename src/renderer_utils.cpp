@@ -29,14 +29,14 @@ namespace utils
 
     uint8_t average(const std::vector<unsigned char> &vec, int begin, int end)
     {
-        float sum = 0;
+        double sum = 0;
         int LEN = end - begin;
-        float AVG = 1.0 / LEN;
+        double AVG = 1.0 / LEN;
         for (auto it = vec.begin() + begin; it != vec.begin() + end; it++)
         {
-            sum += AVG * (*it);
+            sum += (*it);
         }
-        return (uint8_t)sum;
+        return (uint8_t)(sum / LEN);
     }
 
     bool Triangle::isCounterClockwise()
